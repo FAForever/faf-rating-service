@@ -20,7 +20,8 @@ pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 asynctest = "*"
-coveralls = "*"
+python-coveralls = "*"
+mock = "*"
 
 [requires]
 python_version = "3.7"

@@ -32,4 +32,6 @@ install:
 script:
   - scripts/run_tests_with_coverage.sh
   - sed -i.bak s#/code/#$(pwd)/#g .coverage
+
+after_success:
   - coveralls
