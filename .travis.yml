@@ -1,0 +1,34 @@
+language: python
+
+python:
+  - "3.7"
+
+cache: pip
+
+sudo: required
+dist: bionic
+
+services:
+  - docker
+
+env:
+  global:
+    - FAF_DB_VERSION="v93"
+
+before_install:
+  - git clone https://github.com/FAForever/db.git faf-db
+      && pushd faf-db
+      && git checkout "${FAF_DB_VERSION}"
+      && ./ci/bootstrap.sh
+      && popd
+  - docker exec -i faf-db mysql -uroot -pbanana faf -e "select * from login;"
+  - python -m pip install pipenv
+
+install:
+  - pipenv sync --dev
+  - docker build --build-arg TRAVIS_TAG -t faf-rating-service .
+
+script:
+  - scripts/run_tests_with_coverage.sh
+  - sed -i.bak s#/code/#$(pwd)/#g .coverage
+  - coveralls
