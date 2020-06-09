@@ -1,0 +1,17 @@
+# Generated files
+.cache
+.hypothesis
+.mypy_cache
+.pytest_cache
+.coverage
+.vagrant
+htmlcov
+*.pyc
+*.egg-info/
+*.swp
+
+# Misc
+.idea/
+logs/
+*.bak
+*.iml

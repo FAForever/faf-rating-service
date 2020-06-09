@@ -1,0 +1,25 @@
+[scripts]
+devserver = "env CONFIGURATION_FILE=dev-config.yml python service.py"
+tests = "scripts/run_tests_with_coverage.sh"
+
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[packages]
+trueskill = "*"
+sqlalchemy = "*"
+aiomysql = "*"
+aio_pika = "*"
+aiocron = "*"
+prometheus_client = "*"
+
+[dev-packages]
+pytest = "*"
+pytest-asyncio = "*"
+pytest-cov = "*"
+asynctest = "*"
+
+[requires]
+python_version = "3.7"
