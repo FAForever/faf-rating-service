@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Set, Optional
+from typing import Dict, List, NamedTuple, Set, Optional, Callable
 from enum import Enum, unique
 
 from trueskill import Rating
@@ -44,7 +44,7 @@ class TeamRatingData(NamedTuple):
 GameRatingData = List[TeamRatingData]
 
 
-class GameRatingSummary(NamedTuple):
+class GameRatingSummaryWithCallback(NamedTuple):
     """
     Holds minimal information needed to rate a game.
     Fields:
@@ -56,9 +56,10 @@ class GameRatingSummary(NamedTuple):
     game_id: int
     rating_type: RatingType
     teams: List[TeamRatingSummary]
+    callback: Optional[Callable]
 
     @classmethod
-    def from_game_info_dict(cls, game_info: Dict) -> "GameRatingSummary":
+    def from_game_info_dict(cls, game_info: Dict) -> "GameRatingSummaryWithCallback":
         if len(game_info["teams"]) != 2:
             raise ValueError("Detected other than two teams.")
 
@@ -71,6 +72,7 @@ class GameRatingSummary(NamedTuple):
                 )
                 for summary in game_info["teams"]
             ],
+            game_info.get("_ack"),
         )
 
 

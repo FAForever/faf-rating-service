@@ -11,7 +11,7 @@ from service.db.models import (
 )
 from service.rating_service.rating_service import RatingService, ServiceNotReadyError
 from service.rating_service.typedefs import (
-    GameRatingSummary,
+    GameRatingSummaryWithCallback,
     TeamRatingData,
     EndedGameInfo,
     TeamRatingSummary,
@@ -47,13 +47,14 @@ async def semiinitialized_service(database):
 
 @pytest.fixture
 def game_rating_summary():
-    return GameRatingSummary(
+    return GameRatingSummaryWithCallback(
         1,
         RatingType.GLOBAL,
         [
             TeamRatingSummary(GameOutcome.VICTORY, {1}),
             TeamRatingSummary(GameOutcome.DEFEAT, {2}),
         ],
+        mock.Mock(),
     )
 
 
@@ -225,13 +226,14 @@ async def test_get_rating_data(semiinitialized_service):
     player2_db_rating = Rating(1500, 75)
     player2_outcome = GameOutcome.DEFEAT
 
-    summary = GameRatingSummary(
+    summary = GameRatingSummaryWithCallback(
         game_id,
         RatingType.GLOBAL,
         [
             TeamRatingSummary(player1_outcome, {player1_id}),
             TeamRatingSummary(player2_outcome, {player2_id}),
         ],
+        None,
     )
 
     rating_data = await service._get_rating_data(summary)
@@ -291,16 +293,33 @@ async def test_rating_persistence(semiinitialized_service):
         results = await conn.execute(sql)
         rating_row = await results.fetchone()
 
-        sql = select([leaderboard_rating_journal.c.rating_mean_after]).where(
+        sql = select([leaderboard_rating_journal]).where(
             leaderboard_rating_journal.c.game_player_stats_id
             == gps_row[game_player_stats.c.id]
         )
         results = await conn.execute(sql)
         journal_row = await results.fetchone()
 
-    assert gps_row[game_player_stats.c.after_mean] == after_mean
     assert rating_row[leaderboard_rating.c.mean] == after_mean
     assert journal_row[leaderboard_rating_journal.c.rating_mean_after] == after_mean
+    assert (
+        journal_row[leaderboard_rating_journal.c.game_player_stats_id]
+        == gps_row[game_player_stats.c.id]
+    )
+
+
+async def test_message_callback_made(rating_service, game_info):
+    service = rating_service
+    service._persist_rating_changes = CoroutineMock()
+
+    callback = mock.Mock()
+    game_info_dict = game_info.to_dict()
+    game_info_dict["_ack"] = callback
+
+    await service.enqueue(game_info_dict)
+    await service._join_rating_queue()
+
+    callback.assert_called()
 
 
 @pytest.mark.xfail

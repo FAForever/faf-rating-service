@@ -21,7 +21,7 @@ from .game_rater import GameRater, GameRatingError
 from .typedefs import (
     GameOutcome,
     GameRatingData,
-    GameRatingSummary,
+    GameRatingSummaryWithCallback,
     PlayerID,
     RatingType,
     ServiceNotReadyError,
@@ -30,7 +30,7 @@ from .typedefs import (
 
 
 @with_logger
-class RatingService():
+class RatingService:
     """
     Service responsible for calculating and saving trueskill rating updates.
     To avoid race conditions, rating updates from a single game ought to be
@@ -71,7 +71,17 @@ class RatingService():
                 "RatingService not yet initialized or shutting down."
             )
 
-        summary = GameRatingSummary.from_game_info_dict(game_info)
+        try:
+            summary = GameRatingSummaryWithCallback.from_game_info_dict(game_info)
+        except Exception as e:
+            self._logger.debug(
+                "Failed to parse game_info from message id %s: %s",
+                game_info["_id"],
+                str(e),
+            )
+            if game_info.get("_ack") is not None:
+                game_info["_ack"]()
+            return
         self._logger.debug("Queued up rating request %s", summary)
         await self._queue.put(summary)
         rating_service_backlog.set(self._queue.qsize())
@@ -92,11 +102,13 @@ class RatingService():
                 self._logger.debug("Done rating request.")
 
             self._queue.task_done()
+            if summary.callback is not None:
+                summary.callback()
             rating_service_backlog.set(self._queue.qsize())
 
         self._logger.info("RatingService stopped.")
 
-    async def _rate(self, summary: GameRatingSummary) -> None:
+    async def _rate(self, summary: GameRatingSummaryWithCallback) -> None:
         rating_data = await self._get_rating_data(summary)
         new_ratings = GameRater.compute_rating(rating_data)
 
@@ -115,7 +127,9 @@ class RatingService():
             summary.game_id, summary.rating_type, old_ratings, new_ratings, outcome_map
         )
 
-    async def _get_rating_data(self, summary: GameRatingSummary) -> GameRatingData:
+    async def _get_rating_data(
+        self, summary: GameRatingSummaryWithCallback
+    ) -> GameRatingData:
         ratings = {}
         for team in summary.teams:
             for player_id in team.player_ids:

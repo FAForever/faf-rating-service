@@ -120,13 +120,9 @@ class MessageQueueService:
     ) -> None:
         await self.declare_exchange(exchange_name, exchange_type)
 
-        queue = await self._channel.declare_queue(
-            "", exclusive=True, durable=True
-        )
+        queue = await self._channel.declare_queue("", exclusive=True, durable=True)
 
-        await queue.bind(
-            exchange=exchange_name, routing_key=routing_key
-        )
+        await queue.bind(exchange=exchange_name, routing_key=routing_key)
 
         await queue.consume(callback)
 
@@ -138,3 +134,17 @@ class MessageQueueService:
             await self.declare_exchange(
                 exchange_name, self._exchange_types[exchange_name]
             )
+
+
+def message_to_dict(message: aio_pika.IncomingMessage) -> Dict:
+    decoded_dict = json.loads(message.body.decode())
+    decoded_dict.update(
+        {
+            "_ack": message.ack,
+            "_nack": message.nack,
+            "_exchange": message.exchange,
+            "_id": message.message_id,
+            "_routing_key": message.routing_key,
+        }
+    )
+    return decoded_dict
