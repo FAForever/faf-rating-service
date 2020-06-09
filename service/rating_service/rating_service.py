@@ -249,24 +249,6 @@ class RatingService():
                     new_rating,
                 )
 
-                gps_update_sql = (
-                    game_player_stats.update()
-                    .where(
-                        and_(
-                            game_player_stats.c.playerId == player_id,
-                            game_player_stats.c.gameId == game_id,
-                        )
-                    )
-                    .values(
-                        after_mean=new_rating.mu,
-                        after_deviation=new_rating.sigma,
-                        mean=old_rating.mu,
-                        deviation=old_rating.sigma,
-                        scoreTime=func.now(),
-                    )
-                )
-                await conn.execute(gps_update_sql)
-
                 rating_type_id = self._rating_type_ids[rating_type.value]
 
                 journal_insert_sql = leaderboard_rating_journal.insert().values(
