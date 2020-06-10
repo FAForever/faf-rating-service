@@ -8,7 +8,6 @@ these should be put in the ``conftest.py'' relative to it.
 
 import asyncio
 import logging
-import subprocess
 
 import pytest
 
@@ -100,27 +99,21 @@ async def database(request, event_loop):
 
 
 @pytest.fixture
-async def rating_service(database):
-    service = RatingService(database)
+async def message_queue_service():
+    service = MessageQueueService()
     await service.initialize()
+    await service.declare_exchange(config.EXCHANGE_NAME)
 
     yield service
 
     await service.shutdown()
-
-
-@pytest.fixture(scope="session")
-def ensure_rabbitmq_is_running():
-    subprocess.call(".ci/init-rabbitmq.sh")
-    yield
-    subprocess.call(".ci/teardown-rabbitmq.sh")
 
 
 @pytest.fixture
-async def message_queue_service(ensure_rabbitmq_is_running):
-    service = MessageQueueService()
+async def rating_service(database, message_queue_service):
+    service = RatingService(database, message_queue_service)
     await service.initialize()
 
     yield service
 
-    await service.shutdown()
+    service.kill()

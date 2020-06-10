@@ -1,20 +1,33 @@
 import asyncio
 from typing import Dict
 
+from aio_pika import IncomingMessage
+
 import aiocron
 from service import config
 from service.db import FAFDatabase
-from service.db.models import (game_player_stats, leaderboard,
-                               leaderboard_rating, leaderboard_rating_journal)
+from service.db.models import (
+    game_player_stats,
+    leaderboard,
+    leaderboard_rating,
+    leaderboard_rating_journal,
+)
 from service.decorators import with_logger
+from service.message_queue_service import MessageQueueService, message_to_dict
 from service.metrics import rating_service_backlog
 from sqlalchemy import and_, select
 from trueskill import Rating
 
 from .game_rater import GameRater, GameRatingError
-from .typedefs import (GameOutcome, GameRatingData,
-                       GameRatingSummaryWithCallback, PlayerID, RatingType,
-                       ServiceNotReadyError, TeamRatingData)
+from .typedefs import (
+    GameOutcome,
+    GameRatingData,
+    GameRatingSummaryWithCallback,
+    PlayerID,
+    RatingType,
+    ServiceNotReadyError,
+    TeamRatingData,
+)
 
 
 @with_logger
@@ -25,9 +38,9 @@ class RatingService:
     atomic.
     """
 
-    def __init__(self, database: FAFDatabase):
+    def __init__(self, database: FAFDatabase, mq_service: MessageQueueService):
         self._db = database
-        self._player_service_callback = None
+        self._mq_service = mq_service
         self._accept_input = False
         self._queue = asyncio.Queue()
         self._task = None
@@ -44,6 +57,11 @@ class RatingService:
         self._logger.debug("RatingService starting...")
         self._task = asyncio.create_task(self._handle_rating_queue())
 
+        # Listen for game results
+        await self._mq_service.listen(
+            config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, self.handle_message
+        )
+
     async def update_data(self):
         async with self._db.acquire() as conn:
             sql = select([leaderboard])
@@ -51,6 +69,23 @@ class RatingService:
             rows = await result.fetchall()
 
         self._rating_type_ids = {row["technical_name"]: row["id"] for row in rows}
+
+    def handle_message(self, message: IncomingMessage):
+        """
+        Parses a rating request message from RabbitMQ and queues it up.
+        Needs to be synchronous to be used as a callback.
+        """
+        try:
+            parsed_dict = message_to_dict(message)
+        except Exception as e:
+            self._logger.debug(
+                "Failed to parse message with body %s\n Raised exception %s",
+                message.body,
+                e,
+            )
+            message.ack()
+        else:
+            asyncio.create_task(self.enqueue(parsed_dict))
 
     async def enqueue(self, game_info: Dict) -> None:
         if not self._accept_input:
@@ -249,22 +284,21 @@ class RatingService:
                 )
                 await conn.execute(rating_update_sql)
 
-                self._update_player_object(player_id, rating_type, new_rating)
+                await self._notify_rating_change(player_id, rating_type, new_rating)
 
-    def _update_player_object(
+    async def _notify_rating_change(
         self, player_id: PlayerID, rating_type: RatingType, new_rating: Rating
     ) -> None:
-        if self._player_service_callback is None:
-            self._logger.warning(
-                "Tried to send rating change to player service, "
-                "but no service was registered."
-            )
-            return
-
-        self._logger.debug(
-            "Sending player rating update for player with id %i", player_id
+        await self._mq_service.publish(
+            config.EXCHANGE_NAME,
+            config.RATING_UPDATE_ROUTING_KEY,
+            {
+                "player_id": player_id,
+                "rating_type": rating_type,
+                "new_rating_mean": new_rating.mu,
+                "new_rating_deviation": new_rating.sigma,
+            },
         )
-        self._player_service_callback(player_id, rating_type, new_rating)
 
     async def _join_rating_queue(self) -> None:
         """

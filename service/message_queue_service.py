@@ -118,7 +118,8 @@ class MessageQueueService:
         callback,
         exchange_type=ExchangeType.TOPIC,
     ) -> None:
-        await self.declare_exchange(exchange_name, exchange_type)
+        if exchange_name not in self._exchanges:
+            await self.declare_exchange(exchange_name, exchange_type)
 
         queue = await self._channel.declare_queue("", exclusive=True, durable=True)
 

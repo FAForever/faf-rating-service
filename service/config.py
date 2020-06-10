@@ -5,7 +5,7 @@ import trueskill
 # Logging setup
 TRACE = 5
 logging.addLevelName(TRACE, "TRACE")
-logging.getLogger("aiomeasures").setLevel(logging.INFO)
+logging.getLogger("aio_pika").setLevel(logging.INFO)
 
 # Constants
 FFA_TEAM = 1
@@ -31,3 +31,8 @@ MQ_USER = "faf-lobby"
 MQ_PASSWORD = "banana"
 MQ_PORT = 5672
 MQ_VHOST = "/faf-lobby"
+
+EXCHANGE_NAME = "faf-rabbitmq"
+RATING_REQUEST_ROUTING_KEY = "success.gameResults.create"
+RATING_UPDATE_ROUTING_KEY = "success.rating.update"
+RATING_UPDATE_FAIL_ROUTING_KEY = "failure.rating.update"

@@ -4,14 +4,20 @@ import pytest
 
 from asynctest import CoroutineMock
 from service.db import FAFDatabase
-from service.db.models import (game_player_stats, leaderboard_rating,
-                               leaderboard_rating_journal)
-from service.rating_service.rating_service import (RatingService,
-                                                   ServiceNotReadyError)
-from service.rating_service.typedefs import (EndedGameInfo, GameOutcome,
-                                             GameRatingSummaryWithCallback,
-                                             TeamRatingData, TeamRatingSummary,
-                                             ValidityState)
+from service.db.models import (
+    game_player_stats,
+    leaderboard_rating,
+    leaderboard_rating_journal,
+)
+from service.rating_service.rating_service import RatingService, ServiceNotReadyError
+from service.rating_service.typedefs import (
+    EndedGameInfo,
+    GameOutcome,
+    GameRatingSummaryWithCallback,
+    TeamRatingData,
+    TeamRatingSummary,
+    ValidityState,
+)
 from sqlalchemy import and_, select
 from trueskill import Rating
 
@@ -19,21 +25,21 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def rating_service(database):
-    service = RatingService(database)
+async def rating_service(database, message_queue_service):
+    service = RatingService(database, message_queue_service)
     await service.initialize()
     yield service
     service.kill()
 
 
 @pytest.fixture
-def uninitialized_service(database):
-    return RatingService(database)
+def uninitialized_service(database, message_queue_service):
+    return RatingService(database, message_queue_service)
 
 
 @pytest.fixture
-async def semiinitialized_service(database):
-    service = RatingService(database)
+async def semiinitialized_service(database, message_queue_service):
+    service = RatingService(database, message_queue_service)
     await service.update_data()
     return service
 
@@ -290,27 +296,6 @@ async def test_message_callback_made(rating_service, game_info):
     await service._join_rating_queue()
 
     callback.assert_called()
-
-
-@pytest.mark.xfail
-async def test_update_player_service(uninitialized_service):
-    service = uninitialized_service
-    player_id = 1
-    player_service._players = {player_id: mock.MagicMock()}
-
-    service._update_player_object(player_id, "global", Rating(1000, 100))
-
-    player_service[player_id].ratings.__setitem__.assert_called()
-
-
-async def test_update_player_service_failure_warning(uninitialized_service):
-    service = uninitialized_service
-    service._player_service_callback = None
-    service._logger = mock.Mock()
-
-    service._update_player_object(1, "global", Rating(1000, 100))
-
-    service._logger.warning.assert_called()
 
 
 async def test_game_rating_error_handled(rating_service, game_info, bad_game_info):
