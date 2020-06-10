@@ -202,8 +202,6 @@ class RatingService:
         new_rating = await self._create_default_rating(conn, player_id, rating_type)
         return new_rating
 
-        return Rating(row["mean"], row["deviation"])
-
     async def _create_default_rating(
         self, conn, player_id: int, rating_type: RatingType
     ):

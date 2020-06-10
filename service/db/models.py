@@ -1,5 +1,5 @@
 from service.rating_service.typedefs import GameOutcome, Victory
-from sqlalchemy import (TIME, TIMESTAMP, Boolean, Column, DateTime, Enum,
+from sqlalchemy import (TIMESTAMP, Boolean, Column, DateTime, Enum,
                         Float, ForeignKey, Integer, MetaData, String, Table,
                         Text)
 

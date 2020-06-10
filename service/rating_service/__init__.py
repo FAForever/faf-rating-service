@@ -1,3 +1,3 @@
-from .rating_service import RatingService  # noqa: F401
+from .rating_service import RatingService
 
-__all__ = "RatingService"
+__all__ = ("RatingService",)

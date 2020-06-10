@@ -36,7 +36,9 @@ async def main():
     mq_service = MessageQueueService()
     await mq_service.initialize()
 
-    rating_service = RatingService(database)
+    await mq_service.declare_exchange(config.EXCHANGE_NAME)
+
+    rating_service = RatingService(database, mq_service)
     await rating_service.initialize()
 
     def on_message(message):
