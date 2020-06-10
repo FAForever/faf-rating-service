@@ -4,8 +4,7 @@ import asyncio
 import logging
 import signal
 
-from service import db
-from service import config
+from service import config, db
 from service.message_queue_service import MessageQueueService, message_to_dict
 from service.rating_service import RatingService
 

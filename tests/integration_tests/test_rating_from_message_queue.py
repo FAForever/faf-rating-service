@@ -1,8 +1,10 @@
-import pytest
 import asyncio
+
+import pytest
+
+from service.db.models import leaderboard_rating, leaderboard_rating_journal
 from service.message_queue_service import MessageQueueService, message_to_dict
 from service.rating_service import RatingService
-from service.db.models import leaderboard_rating, leaderboard_rating_journal
 from sqlalchemy import and_, select
 
 pytestmark = pytest.mark.asyncio

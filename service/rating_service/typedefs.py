@@ -1,5 +1,5 @@
-from typing import Dict, List, NamedTuple, Set, Optional, Callable
 from enum import Enum, unique
+from typing import Callable, Dict, List, NamedTuple, Optional, Set
 
 from trueskill import Rating
 

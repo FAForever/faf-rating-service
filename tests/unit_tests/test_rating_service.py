@@ -4,20 +4,14 @@ import pytest
 
 from asynctest import CoroutineMock
 from service.db import FAFDatabase
-from service.db.models import (
-    game_player_stats,
-    leaderboard_rating,
-    leaderboard_rating_journal,
-)
-from service.rating_service.rating_service import RatingService, ServiceNotReadyError
-from service.rating_service.typedefs import (
-    GameRatingSummaryWithCallback,
-    TeamRatingData,
-    EndedGameInfo,
-    TeamRatingSummary,
-    ValidityState,
-    GameOutcome,
-)
+from service.db.models import (game_player_stats, leaderboard_rating,
+                               leaderboard_rating_journal)
+from service.rating_service.rating_service import (RatingService,
+                                                   ServiceNotReadyError)
+from service.rating_service.typedefs import (EndedGameInfo, GameOutcome,
+                                             GameRatingSummaryWithCallback,
+                                             TeamRatingData, TeamRatingSummary,
+                                             ValidityState)
 from sqlalchemy import and_, select
 from trueskill import Rating
 

@@ -4,7 +4,6 @@ import aio_pika
 import pytest
 
 import mock
-
 from service import config
 from service.decorators import with_logger
 from service.message_queue_service import MessageQueueService, message_to_dict

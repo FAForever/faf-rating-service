@@ -4,7 +4,7 @@ import trueskill
 from trueskill import Rating
 
 from ..decorators import with_logger
-from .typedefs import GameRatingData, PlayerID, GameOutcome
+from .typedefs import GameOutcome, GameRatingData, PlayerID
 
 
 class GameRatingError(Exception):
