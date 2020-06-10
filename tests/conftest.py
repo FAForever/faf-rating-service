@@ -9,13 +9,9 @@ these should be put in the ``conftest.py'' relative to it.
 import asyncio
 import logging
 import subprocess
-from typing import Iterable
-from unittest import mock
 
 import pytest
 
-import asynctest
-from asynctest import CoroutineMock
 from service import config
 from service.db import FAFDatabase
 from service.message_queue_service import MessageQueueService
@@ -32,7 +28,7 @@ def pytest_addoption(parser):
     parser.addoption('--mysql_username', action='store', default=config.DB_LOGIN, help='mysql username to use for test database')
     parser.addoption('--mysql_password', action='store', default=config.DB_PASSWORD, help='mysql password to use for test database')
     parser.addoption('--mysql_database', action='store', default='faf_test', help='mysql database to use for tests')
-    parser.addoption('--mysql_port',     action='store', default=int(config.DB_PORT), help='mysql port to use for tests')
+    parser.addoption('--mysql_port', action='store', default=int(config.DB_PORT), help='mysql port to use for tests')
 
 
 def pytest_configure(config):
@@ -112,11 +108,13 @@ async def rating_service(database):
 
     await service.shutdown()
 
+
 @pytest.fixture(scope="session")
 def ensure_rabbitmq_is_running():
     subprocess.call(".ci/init-rabbitmq.sh")
     yield
     subprocess.call(".ci/teardown-rabbitmq.sh")
+
 
 @pytest.fixture
 async def message_queue_service(ensure_rabbitmq_is_running):

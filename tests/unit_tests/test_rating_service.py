@@ -16,7 +16,6 @@ from service.rating_service.typedefs import (
     EndedGameInfo,
     TeamRatingSummary,
     ValidityState,
-    RatingType,
     GameOutcome,
 )
 from sqlalchemy import and_, select
@@ -49,7 +48,7 @@ async def semiinitialized_service(database):
 def game_rating_summary():
     return GameRatingSummaryWithCallback(
         1,
-        RatingType.GLOBAL,
+        "global",
         [
             TeamRatingSummary(GameOutcome.VICTORY, {1}),
             TeamRatingSummary(GameOutcome.DEFEAT, {2}),
@@ -62,7 +61,7 @@ def game_rating_summary():
 def game_info():
     return EndedGameInfo(
         1,
-        RatingType.GLOBAL,
+        "global",
         1,
         "faf",
         [],
@@ -82,7 +81,7 @@ def bad_game_info():
     """
     return EndedGameInfo(
         1,
-        RatingType.GLOBAL,
+        "global",
         1,
         "faf",
         [],
@@ -133,7 +132,7 @@ async def test_enqueue_uninitialized(uninitialized_service, game_info):
 async def test_get_rating_uninitialized(uninitialized_service):
     service = uninitialized_service
     with pytest.raises(ServiceNotReadyError):
-        await service._get_player_rating(1, RatingType.GLOBAL)
+        await service._get_player_rating(1, "global")
 
 
 async def test_load_rating_type_ids(uninitialized_service):
@@ -147,7 +146,7 @@ async def test_get_player_rating_global(semiinitialized_service):
     service = semiinitialized_service
     player_id = 50
     true_rating = Rating(1200, 250)
-    rating = await service._get_player_rating(player_id, RatingType.GLOBAL)
+    rating = await service._get_player_rating(player_id, "global")
     assert rating == true_rating
 
 
@@ -155,7 +154,7 @@ async def test_get_player_rating_ladder(semiinitialized_service):
     service = semiinitialized_service
     player_id = 50
     true_rating = Rating(1300, 400)
-    rating = await service._get_player_rating(player_id, RatingType.LADDER_1V1)
+    rating = await service._get_player_rating(player_id, "ladder_1v1")
     assert rating == true_rating
 
 
@@ -171,29 +170,6 @@ async def get_all_ratings(db: FAFDatabase, player_id: int):
     return rows
 
 
-async def test_get_player_rating_legacy(semiinitialized_service):
-    service = semiinitialized_service
-    # Player 51 should have no leaderboard_rating entry
-    # but entries in the legacy global_rating and ladder1v1_rating tables
-    player_id = 51
-    legacy_global_rating = Rating(1201, 250)
-    legacy_ladder_rating = Rating(1301, 400)
-
-    db_ratings = await get_all_ratings(service._db, player_id)
-    assert len(db_ratings) == 0  # no new rating entries yet
-
-    rating = await service._get_player_rating(player_id, RatingType.GLOBAL)
-    assert rating == legacy_global_rating
-
-    rating = await service._get_player_rating(player_id, RatingType.LADDER_1V1)
-    assert rating == legacy_ladder_rating
-
-    db_ratings = await get_all_ratings(service._db, player_id)
-    assert len(db_ratings) == 2  # new rating entries were created
-    assert db_ratings[0]["mean"] == 1201
-    assert db_ratings[1]["mean"] == 1301
-
-
 async def test_get_new_player_rating_created(semiinitialized_service):
     """
     Upon rating games of players without a rating entry in both new and legacy
@@ -201,7 +177,7 @@ async def test_get_new_player_rating_created(semiinitialized_service):
     """
     service = semiinitialized_service
     player_id = 999
-    rating_type = RatingType.LADDER_1V1
+    rating_type = "ladder_1v1"
 
     db_ratings = await get_all_ratings(service._db, player_id)
     assert len(db_ratings) == 0  # Rating does not exist yet
@@ -228,7 +204,7 @@ async def test_get_rating_data(semiinitialized_service):
 
     summary = GameRatingSummaryWithCallback(
         game_id,
-        RatingType.GLOBAL,
+        "global",
         [
             TeamRatingSummary(player1_outcome, {player1_id}),
             TeamRatingSummary(player2_outcome, {player2_id}),
@@ -263,8 +239,8 @@ async def test_rating_persistence(semiinitialized_service):
     service = semiinitialized_service
     game_id = 1
     player_id = 1
-    rating_type = RatingType.GLOBAL
-    rating_type_id = service._rating_type_ids[RatingType.GLOBAL.value]
+    rating_type = "global"
+    rating_type_id = service._rating_type_ids["global"]
     old_ratings = {player_id: Rating(1000, 500)}
     after_mean = 1234
     new_ratings = {player_id: Rating(after_mean, 400)}
@@ -328,7 +304,7 @@ async def test_update_player_service(uninitialized_service):
     player_id = 1
     player_service._players = {player_id: mock.MagicMock()}
 
-    service._update_player_object(player_id, RatingType.GLOBAL, Rating(1000, 100))
+    service._update_player_object(player_id, "global", Rating(1000, 100))
 
     player_service[player_id].ratings.__setitem__.assert_called()
 
@@ -338,7 +314,7 @@ async def test_update_player_service_failure_warning(uninitialized_service):
     service._player_service_callback = None
     service._logger = mock.Mock()
 
-    service._update_player_object(1, RatingType.GLOBAL, Rating(1000, 100))
+    service._update_player_object(1, "global", Rating(1000, 100))
 
     service._logger.warning.assert_called()
 

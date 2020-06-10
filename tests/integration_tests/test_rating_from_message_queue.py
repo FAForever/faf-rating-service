@@ -32,7 +32,7 @@ async def rating_service(database):
 def game_info():
     return {
         "game_id": 111,
-        "rating_type": "GLOBAL",
+        "rating_type": "global",
         "map_id": 222,
         "featured_mod": 0,
         "sim_mod_ids": [],

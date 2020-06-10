@@ -40,4 +40,3 @@ class FAFDatabase:
         self.engine.close()
         await self.engine.wait_closed()
         self.engine = None
-

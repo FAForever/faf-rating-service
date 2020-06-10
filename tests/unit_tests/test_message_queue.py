@@ -1,5 +1,4 @@
 import aio_pika
-import json
 import pytest
 
 from service.message_queue_service import MessageQueueService

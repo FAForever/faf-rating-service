@@ -5,13 +5,11 @@ from trueskill import Rating
 
 PlayerID = int
 
-
-# Values correspond to legacy table names.
-# FIXME Should be dropped soon
-# in favour of looking up rating types in `leaderboard`
-class RatingType(Enum):
-    GLOBAL = "global"
-    LADDER_1V1 = "ladder_1v1"
+# RatingType is now a plain string instead of the hardcoded enum.
+# It should correspond to the `technical_name` column
+# of the `leaderboard` table
+# e.g. "global" or "ladder_1v1"
+RatingType = str
 
 
 @unique
@@ -49,7 +47,7 @@ class GameRatingSummaryWithCallback(NamedTuple):
     Holds minimal information needed to rate a game.
     Fields:
      - game_id: id of the game to rate
-     - rating_type: RatingType (e.g. LADDER_1V1)
+     - rating_type: RatingType (e.g. "ladder_1v1")
      - teams: a list of two TeamRatingSummaries
     """
 
@@ -65,7 +63,7 @@ class GameRatingSummaryWithCallback(NamedTuple):
 
         return cls(
             game_info["game_id"],
-            getattr(RatingType, game_info["rating_type"]),
+            game_info["rating_type"],
             [
                 TeamRatingSummary(
                     getattr(GameOutcome, summary["outcome"]), set(summary["player_ids"])
@@ -121,7 +119,7 @@ class BasicGameInfo(NamedTuple):
     Holds basic information about a game that does not change after launch.
     Fields:
      - game_id: id of the game
-     - rating_type: RatingType (e.g. LADDER_1V1)
+     - rating_type: RatingType (e.g. "ladder_1v1")
      - map_id: id of the map used
      - game_mode: name of the featured mod
     """
@@ -139,7 +137,7 @@ class EndedGameInfo(NamedTuple):
     Holds the outcome of an ended game.
     Fields:
      - game_id: id of the game
-     - rating_type: RatingType (e.g. LADDER_1V1)
+     - rating_type: RatingType (e.g. "ladder_1v1")
      - map_id: id of the map used
      - game_mode: name of the featured mod
      - validity: ValidityState (e.g. VALID or TOO_SHORT)
@@ -187,9 +185,7 @@ class EndedGameInfo(NamedTuple):
     def to_dict(self):
         return {
             "game_id": self.game_id,
-            "rating_type": self.rating_type.name
-            if self.rating_type is not None
-            else "None",
+            "rating_type": self.rating_type if self.rating_type is not None else "None",
             "map_id": self.map_id,
             "featured_mod": self.game_mode,
             "sim_mod_ids": self.mods,
