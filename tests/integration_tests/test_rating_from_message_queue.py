@@ -79,7 +79,6 @@ async def test_rate_game(message_queue_service, rating_service, game_info, consu
         loser_rating_row["mean"],
     )
 
-    print(consumer.received_messages)
     assert any(
         message.routing_key == "success.rating.update"
         for message in consumer.received_messages
@@ -104,3 +103,35 @@ async def test_notify_rating_change(rating_service, consumer):
         and message.get("rating_type") == rating_type
         for message in parsed_messages
     )
+
+async def test_rate_multiple_games(message_queue_service, rating_service, game_info):
+    await message_queue_service.publish(
+        config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info
+    )
+    await message_queue_service.publish(
+        config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info
+    )
+    await message_queue_service.publish(
+        config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info
+    )
+
+    await asyncio.sleep(0.1)
+    await rating_service._join_rating_queue()
+    await asyncio.sleep(0.1)
+    await rating_service._join_rating_queue()
+    await asyncio.sleep(0.1)
+    await rating_service._join_rating_queue()
+
+    player_id = game_info["teams"][0]["player_ids"][0]
+    rating_type_id = rating_service._rating_type_ids["global"]
+    async with rating_service._db.acquire() as conn:
+        sql = select([leaderboard_rating.c.total_games]).where(
+            and_(
+                leaderboard_rating.c.login_id == player_id,
+                leaderboard_rating.c.leaderboard_id == rating_type_id,
+            )
+        )
+        results = await conn.execute(sql)
+        game_count = await results.fetchone()
+
+    assert game_count["total_games"] == 3

@@ -14,7 +14,7 @@ COPY Pipfile Pipfile
 RUN python3 -m pip install pipenv
 RUN pipenv install --ignore-pipfile --system --deploy
 
-ADD . /code/
+COPY . /code/
 
 ARG TRAVIS_TAG
 ENV VERSION=$TRAVIS_TAG

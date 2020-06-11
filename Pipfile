@@ -1,5 +1,5 @@
 [scripts]
-devserver = "env CONFIGURATION_FILE=dev-config.yml python service.py"
+devserver = "python service.py"
 tests = "scripts/run_tests_with_coverage.sh"
 
 [[source]]

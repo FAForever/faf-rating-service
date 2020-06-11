@@ -56,7 +56,8 @@ class MessageQueueService:
             return
 
         self._channel = await self._connection.channel(publisher_confirms=False)
-        await self._channel.set_qos(prefetch_count=1)
+        # FIXME re-enable when ack-flow works
+        # await self._channel.set_qos(prefetch_count=1)
         self._logger.debug("Connected to RabbitMQ %r", self._connection)
 
     async def declare_exchange(

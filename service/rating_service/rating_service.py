@@ -83,7 +83,7 @@ class RatingService:
                 message.body,
                 e,
             )
-            message.ack()
+            message.reject()
         else:
             asyncio.create_task(self.enqueue(parsed_dict))
 
