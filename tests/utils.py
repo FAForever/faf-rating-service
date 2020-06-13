@@ -68,6 +68,7 @@ def fast_forward(timeout):
             return await fut
 
         return awaiter
+
     return deco
 
 
@@ -94,6 +95,7 @@ class MockDatabase:
     Note that right now the server relies on autocommit behaviour of aiomysql.
     Any future manual commit() calls should be mocked here as well.
     """
+
     def __init__(self, loop):
         self._loop = loop
         self.engine = None
@@ -103,8 +105,16 @@ class MockDatabase:
         self._lock = Lock()
         self._done = Event()
 
-    async def connect(self, host='localhost', port=3306, user='root',
-                      password='', db='faf_test', minsize=1, maxsize=1):
+    async def connect(
+        self,
+        host="localhost",
+        port=3306,
+        user="root",
+        password="",
+        db="faf_test",
+        minsize=1,
+        maxsize=1,
+    ):
         if self.engine is not None:
             raise ValueError("DB is already connected!")
         self.engine = await create_engine(
@@ -117,7 +127,7 @@ class MockDatabase:
             loop=self._loop,
             minsize=minsize,
             maxsize=maxsize,
-            echo=True
+            echo=True,
         )
         self._keep = self._loop.create_task(self._keep_connection())
         await self._conn_present.wait()

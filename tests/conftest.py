@@ -21,13 +21,42 @@ logging.getLogger().setLevel(config.TRACE)
 
 
 def pytest_addoption(parser):
-    parser.addoption('--aiodebug', action='store_true', default=False,
-                     help='Enable asyncio debugging')
-    parser.addoption('--mysql_host', action='store', default=config.DB_SERVER, help='mysql host to use for test database')
-    parser.addoption('--mysql_username', action='store', default=config.DB_LOGIN, help='mysql username to use for test database')
-    parser.addoption('--mysql_password', action='store', default=config.DB_PASSWORD, help='mysql password to use for test database')
-    parser.addoption('--mysql_database', action='store', default='faf_test', help='mysql database to use for tests')
-    parser.addoption('--mysql_port', action='store', default=int(config.DB_PORT), help='mysql port to use for tests')
+    parser.addoption(
+        "--aiodebug",
+        action="store_true",
+        default=False,
+        help="Enable asyncio debugging",
+    )
+    parser.addoption(
+        "--mysql_host",
+        action="store",
+        default=config.DB_SERVER,
+        help="mysql host to use for test database",
+    )
+    parser.addoption(
+        "--mysql_username",
+        action="store",
+        default=config.DB_LOGIN,
+        help="mysql username to use for test database",
+    )
+    parser.addoption(
+        "--mysql_password",
+        action="store",
+        default=config.DB_PASSWORD,
+        help="mysql password to use for test database",
+    )
+    parser.addoption(
+        "--mysql_database",
+        action="store",
+        default="faf_test",
+        help="mysql database to use for tests",
+    )
+    parser.addoption(
+        "--mysql_port",
+        action="store",
+        default=int(config.DB_PORT),
+        help="mysql port to use for tests",
+    )
 
 
 def pytest_configure(config):
@@ -39,10 +68,10 @@ def pytest_configure(config):
     )
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 async def test_data(request):
     db = await global_database(request)
-    with open('tests/data/test-data.sql') as f:
+    with open("tests/data/test-data.sql") as f:
         async with db.acquire() as conn:
             await conn.execute(f.read())
 
@@ -52,22 +81,17 @@ async def test_data(request):
 async def global_database(request):
     def opt(val):
         return request.config.getoption(val)
+
     host, user, pw, name, port = (
-        opt('--mysql_host'),
-        opt('--mysql_username'),
-        opt('--mysql_password'),
-        opt('--mysql_database'),
-        opt('--mysql_port')
+        opt("--mysql_host"),
+        opt("--mysql_username"),
+        opt("--mysql_password"),
+        opt("--mysql_database"),
+        opt("--mysql_port"),
     )
     db = FAFDatabase(asyncio.get_running_loop())
 
-    await db.connect(
-        host=host,
-        user=user,
-        password=pw or None,
-        port=port,
-        db=name
-    )
+    await db.connect(host=host, user=user, password=pw or None, port=port, db=name)
 
     return db
 
@@ -76,22 +100,17 @@ async def global_database(request):
 async def database(request, event_loop):
     def opt(val):
         return request.config.getoption(val)
+
     host, user, pw, name, port = (
-        opt('--mysql_host'),
-        opt('--mysql_username'),
-        opt('--mysql_password'),
-        opt('--mysql_database'),
-        opt('--mysql_port')
+        opt("--mysql_host"),
+        opt("--mysql_username"),
+        opt("--mysql_password"),
+        opt("--mysql_database"),
+        opt("--mysql_port"),
     )
     db = MockDatabase(event_loop)
 
-    await db.connect(
-        host=host,
-        user=user,
-        password=pw or None,
-        port=port,
-        db=name
-    )
+    await db.connect(host=host, user=user, password=pw or None, port=port, db=name)
 
     yield db
 

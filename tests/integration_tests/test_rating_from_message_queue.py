@@ -104,6 +104,7 @@ async def test_notify_rating_change(rating_service, consumer):
         for message in parsed_messages
     )
 
+
 async def test_rate_multiple_games(message_queue_service, rating_service, game_info):
     await message_queue_service.publish(
         config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info

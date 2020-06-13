@@ -8,13 +8,13 @@ class FAFDatabase:
 
     async def connect(
         self,
-        host='localhost',
+        host="localhost",
         port=3306,
-        user='root',
-        password='',
-        db='faf_test',
+        user="root",
+        password="",
+        db="faf_test",
         minsize=1,
-        maxsize=1
+        maxsize=1,
     ):
         if self.engine is not None:
             raise ValueError("DB is already connected!")

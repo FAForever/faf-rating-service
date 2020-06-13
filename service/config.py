@@ -7,9 +7,6 @@ TRACE = 5
 logging.addLevelName(TRACE, "TRACE")
 logging.getLogger("aio_pika").setLevel(logging.INFO)
 
-# Constants
-FFA_TEAM = 1
-
 # Credit to Axle for parameter changes,
 # see: http://forums.faforever.com/viewtopic.php?f=45&t=11698#p119599
 # Optimum values for ladder here, using them for global as well.

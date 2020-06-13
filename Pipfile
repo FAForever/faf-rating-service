@@ -1,6 +1,7 @@
 [scripts]
 devserver = "python service.py"
 tests = "scripts/run_tests_with_coverage.sh"
+vulture = "vulture service.py service/ --sort-by-size"
 
 [[source]]
 name = "pypi"
@@ -23,6 +24,8 @@ asynctest = "*"
 python-coveralls = "*"
 mock = "*"
 pytest-mock = "*"
+vulture = "*"
+v = {version = "*",editable = true}
 
 [requires]
 python_version = "3.7"
