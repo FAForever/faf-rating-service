@@ -78,7 +78,7 @@ class RatingService:
         try:
             parsed_dict = message_to_dict(message)
         except Exception as e:
-            self._logger.debug(
+            self._logger.warning(
                 "Failed to parse message with body %s\n Raised exception %s",
                 message.body,
                 e,
@@ -97,7 +97,7 @@ class RatingService:
         try:
             summary = GameRatingSummaryWithCallback.from_game_info_dict(game_info)
         except Exception as e:
-            self._logger.debug(
+            self._logger.warning(
                 "Failed to parse game_info from message id %s: %s",
                 game_info.get("_id"),
                 str(e),
@@ -105,7 +105,7 @@ class RatingService:
             if game_info.get("_ack") is not None:
                 game_info["_ack"]()
             return
-        self._logger.debug("Queued up rating request %s", summary)
+        self._logger.debug("Queued up rating request for game %s", summary.game_id)
         await self._queue.put(summary)
         rating_service_backlog.set(self._queue.qsize())
 
@@ -113,7 +113,7 @@ class RatingService:
         self._logger.info("RatingService started!")
         while self._accept_input or not self._queue.empty():
             summary = await self._queue.get()
-            self._logger.debug("Now rating request %s", summary)
+            self._logger.debug("Now rating request for game  %s", summary.game_id)
 
             try:
                 await self._rate(summary)
@@ -232,18 +232,9 @@ class RatingService:
         """
         Persist computed ratings to the respective players' selected rating
         """
-        self._logger.info("Saving rating change stats for game %i", game_id)
-
         async with self._db.acquire() as conn:
             for player_id, new_rating in new_ratings.items():
                 old_rating = old_ratings[player_id]
-                self._logger.debug(
-                    "New %s rating for player with id %s: %s -> %s",
-                    rating_type,
-                    player_id,
-                    old_rating,
-                    new_rating,
-                )
 
                 rating_type_id = self._rating_type_ids[rating_type]
 

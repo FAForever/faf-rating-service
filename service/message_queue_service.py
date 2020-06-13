@@ -108,9 +108,6 @@ class MessageQueueService:
 
         async with self._channel.transaction():
             await exchange.publish(message, routing_key=routing)
-            self._logger.debug(
-                "Published message %s to %s/%s", payload, exchange_name, routing
-            )
 
     async def listen(
         self,
