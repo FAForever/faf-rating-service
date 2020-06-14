@@ -24,7 +24,7 @@ DB_NAME = "faf"
 START_RATING_MEAN = 1500
 START_RATING_DEV = 500
 
-MQ_USER = "faf-lobby"
+MQ_USER = "faf-rating-service"
 MQ_PASSWORD = "banana"
 MQ_PORT = 5672
 MQ_VHOST = "/faf-lobby"
