@@ -6,12 +6,8 @@ from aio_pika import IncomingMessage
 import aiocron
 from service import config
 from service.db import FAFDatabase
-from service.db.models import (
-    game_player_stats,
-    leaderboard,
-    leaderboard_rating,
-    leaderboard_rating_journal,
-)
+from service.db.models import (game_player_stats, leaderboard,
+                               leaderboard_rating, leaderboard_rating_journal)
 from service.decorators import with_logger
 from service.message_queue_service import MessageQueueService, message_to_dict
 from service.metrics import rating_service_backlog
@@ -19,15 +15,9 @@ from sqlalchemy import and_, select
 from trueskill import Rating
 
 from .game_rater import GameRater, GameRatingError
-from .typedefs import (
-    GameOutcome,
-    GameRatingData,
-    GameRatingSummaryWithCallback,
-    PlayerID,
-    RatingType,
-    ServiceNotReadyError,
-    TeamRatingData,
-)
+from .typedefs import (GameOutcome, GameRatingData,
+                       GameRatingSummaryWithCallback, PlayerID, RatingType,
+                       ServiceNotReadyError, TeamRatingData)
 
 
 @with_logger

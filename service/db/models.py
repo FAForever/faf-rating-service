@@ -1,16 +1,5 @@
-from sqlalchemy import (
-    TIMESTAMP,
-    Boolean,
-    Column,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    Text,
-)
+from sqlalchemy import (TIMESTAMP, Boolean, Column, Enum, Float, ForeignKey,
+                        Integer, MetaData, String, Table, Text)
 
 metadata = MetaData()
 

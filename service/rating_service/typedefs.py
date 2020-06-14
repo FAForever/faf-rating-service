@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, unique
 from typing import Callable, Dict, List, NamedTuple, Optional, Set
 
 from trueskill import Rating
@@ -10,6 +10,14 @@ PlayerID = int
 # of the `leaderboard` table
 # e.g. "global" or "ladder_1v1"
 RatingType = str
+
+
+@unique
+class Victory(Enum):
+    DEMORALIZATION = 0
+    DOMINATION = 1
+    ERADICATION = 2
+    SANDBOX = 3
 
 
 class GameOutcome(Enum):
@@ -72,3 +80,119 @@ class RatingServiceError(Exception):
 
 class ServiceNotReadyError(RatingServiceError):
     pass
+
+
+@unique
+class ValidityState(Enum):
+    VALID = 0
+    TOO_MANY_DESYNCS = 1
+    WRONG_VICTORY_CONDITION = 2
+    NO_FOG_OF_WAR = 3
+    CHEATS_ENABLED = 4
+    PREBUILT_ENABLED = 5
+    NORUSH_ENABLED = 6
+    BAD_UNIT_RESTRICTIONS = 7
+    BAD_MAP = 8
+    TOO_SHORT = 9
+    BAD_MOD = 10
+    COOP_NOT_RANKED = 11
+    MUTUAL_DRAW = 12
+    SINGLE_PLAYER = 13
+    FFA_NOT_RANKED = 14
+    UNEVEN_TEAMS_NOT_RANKED = 15
+    UNKNOWN_RESULT = 16
+    UNLOCKED_TEAMS = 17
+    MULTI_TEAM = 18
+    HAS_AI_PLAYERS = 19
+    CIVILIANS_REVEALED = 20
+    WRONG_DIFFICULTY = 21
+    EXPANSION_DISABLED = 22
+    SPAWN_NOT_FIXED = 23
+    OTHER_UNRANK = 24
+
+
+class BasicGameInfo(NamedTuple):
+    """
+    Holds basic information about a game that does not change after launch.
+    Fields:
+     - game_id: id of the game
+     - rating_type: RatingType (e.g. "ladder_1v1")
+     - map_id: id of the map used
+     - game_mode: name of the featured mod
+    """
+
+    game_id: int
+    rating_type: Optional[RatingType]
+    map_id: int
+    game_mode: str
+    mods: List[int]
+    teams: List[Set["Player"]]
+
+
+class EndedGameInfo(NamedTuple):
+    """
+    Holds the outcome of an ended game.
+    Fields:
+     - game_id: id of the game
+     - rating_type: RatingType (e.g. "ladder_1v1")
+     - map_id: id of the map used
+     - game_mode: name of the featured mod
+     - validity: ValidityState (e.g. VALID or TOO_SHORT)
+     - team_summaries: a list of TeamRatingSummaries containing IDs of players
+       on the team and the team's outcome
+    """
+
+    game_id: int
+    rating_type: Optional[RatingType]
+    map_id: int
+    game_mode: str
+    mods: List[int]
+    commander_kills: Dict[str, int]
+    validity: ValidityState
+    team_summaries: List[TeamRatingSummary]
+
+    @classmethod
+    def from_basic(
+        cls,
+        basic_info: BasicGameInfo,
+        validity: ValidityState,
+        team_outcomes: List[GameOutcome],
+        commander_kills: Dict[str, int],
+    ) -> "EndedGameInfo":
+        if len(basic_info.teams) != len(team_outcomes):
+            raise ValueError(
+                "Team sets of basic_info and team outcomes must refer to the "
+                "same number of teams in the same order."
+            )
+
+        return cls(
+            basic_info.game_id,
+            basic_info.rating_type,
+            basic_info.map_id,
+            basic_info.game_mode,
+            basic_info.mods,
+            commander_kills,
+            validity,
+            [
+                TeamRatingSummary(outcome, set(player.id for player in team))
+                for outcome, team in zip(team_outcomes, basic_info.teams)
+            ],
+        )
+
+    def to_dict(self):
+        return {
+            "game_id": self.game_id,
+            "rating_type": self.rating_type if self.rating_type is not None else "None",
+            "map_id": self.map_id,
+            "featured_mod": self.game_mode,
+            "sim_mod_ids": self.mods,
+            "commander_kills": self.commander_kills,
+            "validity": self.validity.name,
+            "teams": [
+                {
+                    "outcome": team_summary.outcome.name,
+                    "player_ids": list(team_summary.player_ids),
+                }
+                for team_summary in self.team_summaries
+            ],
+        }
