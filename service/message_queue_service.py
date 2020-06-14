@@ -5,6 +5,7 @@ from typing import Dict
 import aio_pika
 from aio_pika import DeliveryMode, ExchangeType
 from aio_pika.exceptions import ProbableAuthenticationError
+from pamqp import specification
 
 from service import config
 from service.decorators import with_logger
@@ -55,7 +56,7 @@ class MessageQueueService:
             )
             return
 
-        self._channel = await self._connection.channel(publisher_confirms=False)
+        self._channel = await self._connection.channel()
         if config.MQ_PREFETCH_COUNT:
             await self._channel.set_qos(prefetch_count=config.MQ_PREFETCH_COUNT)
         self._logger.debug("Connected to RabbitMQ %r", self._connection)
@@ -106,8 +107,13 @@ class MessageQueueService:
             json.dumps(payload).encode(), delivery_mode=delivery_mode
         )
 
-        async with self._channel.transaction():
-            await exchange.publish(message, routing_key=routing)
+        confirmation = await exchange.publish(message, routing_key=routing)
+        if not isinstance(confirmation, specification.Basic.Ack):
+            self._logger.warning(
+                "Message could not be delivered to %s, received %s",
+                routing,
+                confirmation,
+            )
 
     async def listen(
         self,
