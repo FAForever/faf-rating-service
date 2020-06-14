@@ -106,20 +106,12 @@ async def test_notify_rating_change(rating_service, consumer):
 
 
 async def test_rate_multiple_games(message_queue_service, rating_service, game_info):
-    await message_queue_service.publish(
-        config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info
-    )
-    await message_queue_service.publish(
-        config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info
-    )
-    await message_queue_service.publish(
-        config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info
-    )
+    message_count = 1000
+    for _ in range(message_count):
+        await message_queue_service.publish(
+            config.EXCHANGE_NAME, config.RATING_REQUEST_ROUTING_KEY, game_info
+        )
 
-    await asyncio.sleep(0.1)
-    await rating_service._join_rating_queue()
-    await asyncio.sleep(0.1)
-    await rating_service._join_rating_queue()
     await asyncio.sleep(0.1)
     await rating_service._join_rating_queue()
 
@@ -135,4 +127,4 @@ async def test_rate_multiple_games(message_queue_service, rating_service, game_i
         results = await conn.execute(sql)
         game_count = await results.fetchone()
 
-    assert game_count["total_games"] == 3
+    assert game_count["total_games"] == message_count

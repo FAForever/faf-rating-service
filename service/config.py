@@ -28,6 +28,7 @@ MQ_USER = "faf-rating-service"
 MQ_PASSWORD = "banana"
 MQ_PORT = 5672
 MQ_VHOST = "/faf-lobby"
+MQ_PREFETCH_COUNT = 300
 
 EXCHANGE_NAME = "faf-rabbitmq"
 RATING_REQUEST_ROUTING_KEY = "success.gameResults.create"
